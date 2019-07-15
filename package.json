@@ -1,0 +1,25 @@
+{
+  "name": "fakejs",
+  "version": "0.0.1",
+  "description": "A library modified from xterm.js and ansi_up, using canvas to draw log",
+  "main": "dist/fake.js",
+  "style": "dist/fake.css",
+  "scripts": {
+    "prepackage": "npm run build",
+    "package": "webpack && cp css/* dist/",
+    "build": "tsc -b ./tsconfig.all.json",
+    "clean": "rm -rf lib dist"
+  },
+  "keywords": [
+    "canvas"
+  ],
+  "author": "Henry.Liu",
+  "license": "ISC",
+  "devDependencies": {
+    "source-map-loader": "^0.2.4",
+    "typescript": "3.5",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.3.0"
+  },
+  "dependencies": {},
+}

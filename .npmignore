@@ -1,0 +1,9 @@
+*
+
+# Whitelist - dist/
+!dist/**/*.js
+!dist/**/*.js.map
+!dist/**/*.css
+
+# Whitelist - typings/
+#!typings/*.d.ts

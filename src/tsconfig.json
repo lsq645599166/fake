@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "outDir": "../lib/",
+    "sourceMap": true,
+    "module": "es2015",
+    "moduleResolution": "node",
+    "target": "es5",
+    "lib": ["es5", "es6", "dom"]
+  },
+  "include": [
+    "./**/*",
+    "../typings/fake.d.ts"
+  ],
+  "exclude": []
+}
