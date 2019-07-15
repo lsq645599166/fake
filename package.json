@@ -1,5 +1,5 @@
 {
-  "name": "fakejs",
+  "name": "@lsq645599166/fakejs",
   "version": "0.0.1",
   "description": "A library modified from xterm.js and ansi_up, using canvas to draw log",
   "main": "dist/fake.js",
