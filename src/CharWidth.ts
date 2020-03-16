@@ -1,11 +1,8 @@
-export const wcwidth = ((opts: {nul: number, control: number}): (ucs: number) => number => {
-  const COMBINING_HIGH = [
-    [0x10A01, 0x10A03], [0x10A05, 0x10A06], [0x10A0C, 0x10A0F],
-    [0x10A38, 0x10A3A], [0x10A3F, 0x10A3F], [0x1D167, 0x1D169],
-    [0x1D173, 0x1D182], [0x1D185, 0x1D18B], [0x1D1AA, 0x1D1AD],
-    [0x1D242, 0x1D244], [0xE0001, 0xE0001], [0xE0020, 0xE007F],
-    [0xE0100, 0xE01EF],
-  ];
+import { fill } from './common/TypedArrayUtils';
+
+export const wcwidth = (function (opts: {nul: number, control: number}): (ucs: number) => number {
+  // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
+  // combining characters
   const COMBINING_BMP = [
     [0x0300, 0x036F], [0x0483, 0x0486], [0x0488, 0x0489],
     [0x0591, 0x05BD], [0x05BF, 0x05BF], [0x05C1, 0x05C2],
@@ -51,11 +48,15 @@ export const wcwidth = ((opts: {nul: number, control: number}): (ucs: number) =>
     [0xA825, 0xA826], [0xFB1E, 0xFB1E], [0xFE00, 0xFE0F],
     [0xFE20, 0xFE23], [0xFEFF, 0xFEFF], [0xFFF9, 0xFFFB],
   ];
-
-  const control = opts.control | 0;
-  let table = null;
-
-  function bisearch(ucs: number, data: Array<Array<number>>): boolean {
+  const COMBINING_HIGH = [
+    [0x10A01, 0x10A03], [0x10A05, 0x10A06], [0x10A0C, 0x10A0F],
+    [0x10A38, 0x10A3A], [0x10A3F, 0x10A3F], [0x1D167, 0x1D169],
+    [0x1D173, 0x1D182], [0x1D185, 0x1D18B], [0x1D1AA, 0x1D1AD],
+    [0x1D242, 0x1D244], [0xE0001, 0xE0001], [0xE0020, 0xE007F],
+    [0xE0100, 0xE01EF],
+  ];
+  // binary search
+  function bisearch(ucs: number, data: number[][]): boolean {
     let min = 0;
     let max = data.length - 1;
     let mid;
@@ -75,65 +76,7 @@ export const wcwidth = ((opts: {nul: number, control: number}): (ucs: number) =>
 
     return false;
   }
-
-  function wcwidthBMP(ucs: number): number {
-    // test for 8-bit control characters
-    if (ucs === 0) {
-      return opts.nul;
-    }
-    if (ucs < 32 || (ucs >= 0x7f && ucs < 0xa0)) {
-      return opts.control;
-    }
-    // binary search in table of non-spacing characters
-    if (bisearch(ucs, COMBINING_BMP)) {
-      return 0;
-    }
-    // if we arrive here, ucs is not a combining or C0/C1 control character
-    if (isWideBMP(ucs)) {
-      return 2;
-    }
-
-    return 1;
-  }
-
-  function isWideBMP(ucs: number): boolean {
-    return (
-      ucs >= 0x1100 && (
-      ucs <= 0x115f ||                // Hangul Jamo init. consonants
-      ucs === 0x2329 ||
-      ucs === 0x232a ||
-      (ucs >= 0x2e80 && ucs <= 0xa4cf && ucs !== 0x303f) ||  // CJK..Yi
-      (ucs >= 0xac00 && ucs <= 0xd7a3) ||    // Hangul Syllables
-      (ucs >= 0xf900 && ucs <= 0xfaff) ||    // CJK Compat Ideographs
-      (ucs >= 0xfe10 && ucs <= 0xfe19) ||    // Vertical forms
-      (ucs >= 0xfe30 && ucs <= 0xfe6f) ||    // CJK Compat Forms
-      (ucs >= 0xff00 && ucs <= 0xff60) ||    // Fullwidth Forms
-      (ucs >= 0xffe0 && ucs <= 0xffe6)));
-  }
-
-  function initTable(): Array<number> | Uint32Array {
-    // lookup table for BMP
-    const CODEPOINTS = 65536;  // BMP holds 65536 codepoints
-    const BITWIDTH = 2;        // a codepoint can have a width of 0, 1 or 2
-    const ITEMSIZE = 32;       // using uint32_t
-    const CONTAINERSIZE = CODEPOINTS * BITWIDTH / ITEMSIZE;
-    const CODEPOINTS_PER_ITEM = ITEMSIZE / BITWIDTH;
-    table = (typeof Uint32Array === 'undefined')
-      ? []
-      : new Uint32Array(CONTAINERSIZE);
-    for (let i = 0; i < CONTAINERSIZE; i += 1) {
-      let num = 0;
-      let pos = CODEPOINTS_PER_ITEM;
-      while (pos -= 1) {
-        num = (num << 2) | wcwidthBMP(CODEPOINTS_PER_ITEM * i + pos);
-      }
-      table[i] = num;
-    }
-
-    return table;
-  }
-
-  function wcwidthHigh(ucs): 0 | 1 | 2 {
+  function wcwidthHigh(ucs: number): 0 | 1 | 2 {
     if (bisearch(ucs, COMBINING_HIGH)) {
       return 0;
     }
@@ -143,21 +86,52 @@ export const wcwidth = ((opts: {nul: number, control: number}): (ucs: number) =>
 
     return 1;
   }
+  const control = opts.control | 0;
 
-  return (initNum: number): number => {
-    const num = initNum | 0;  // get asm.js like optimization under V8
+  // create lookup table for BMP plane
+  const table = new Uint8Array(65536);
+  fill(table, 1);
+  table[0] = opts.nul;
+  // control chars
+  fill(table, opts.control, 1, 32);
+  fill(table, opts.control, 0x7f, 0xa0);
+
+  // apply wide char rules first
+  // wide chars
+  fill(table, 2, 0x1100, 0x1160);
+  table[0x2329] = 2;
+  table[0x232a] = 2;
+  fill(table, 2, 0x2e80, 0xa4d0);
+  table[0x303f] = 1;  // wrongly in last line
+
+  fill(table, 2, 0xac00, 0xd7a4);
+  fill(table, 2, 0xf900, 0xfb00);
+  fill(table, 2, 0xfe10, 0xfe1a);
+  fill(table, 2, 0xfe30, 0xfe70);
+  fill(table, 2, 0xff00, 0xff61);
+  fill(table, 2, 0xffe0, 0xffe7);
+
+  // apply combining last to ensure we overwrite
+  // wrongly wide set chars:
+  //    the original algo evals combining first and falls
+  //    through to wide check so we simply do here the opposite
+  // combining 0
+  for (let r = 0; r < COMBINING_BMP.length; r += 1) {
+    fill(table, 0, COMBINING_BMP[r][0], COMBINING_BMP[r][1] + 1);
+  }
+
+  return function (num: number): number {
     if (num < 32) {
       return control | 0;
     }
     if (num < 127) {
       return 1;
     }
-    const t = table || initTable();
     if (num < 65536) {
-      return t[num >> 4] >> ((num & 15) << 1) & 3;
+      return table[num];
     }
-    // do a full search for high codepoints
 
+    // do a full search for high codepoints
     return wcwidthHigh(num);
   };
 })({ nul: 0, control: 0 });
