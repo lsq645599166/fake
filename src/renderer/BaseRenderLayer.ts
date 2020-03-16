@@ -80,7 +80,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
   private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number): void {
     this._ctx.save();
-    this._ctx.font = this.getFont(terminal);
+    const font = this.getFont(terminal);
+    this._ctx.font = font;
     this._ctx.textBaseline = 'top';
 
     if (fg === INVERTED_DEFAULT_COLOR) {
@@ -94,7 +95,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.fillText(
       char,
       x * this._scaledCellWidth,
-      y * this._scaledCellHeight);
+      // put the text in the middle of selection area
+      y * this._scaledCellHeight + (this._scaledCellHeight - parseInt(font, 10)) / 2);
 
     this._ctx.restore();
   }

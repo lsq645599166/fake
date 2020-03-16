@@ -68,11 +68,14 @@ export class MouseHelper {
       return null;
     }
 
-    coords[0] = Math.ceil(
-      (coords[0] + (isSelection ? this._renderer.dimensions.actualCellWidth / 2 : 0))
-      / this._renderer.dimensions.actualCellWidth,
-    );
-    coords[1] = Math.ceil(coords[1] / this._renderer.dimensions.actualCellHeight);
+    /*
+     * in retina screen, the scaledCellWidth is twice the realWidth, and the same with realHeight
+     */
+    const realWidth = this._renderer.dimensions.scaledCellWidth / window.devicePixelRatio;
+    const realHeight = this._renderer.dimensions.scaledCellHeight / window.devicePixelRatio;
+
+    coords[0] = Math.ceil((coords[0] + (isSelection ? realWidth / 2 : 0)) / realWidth);
+    coords[1] = Math.ceil(coords[1] / realHeight);
 
     // Ensure coordinates are within the terminal viewport. Note that selections
     // need an addition point of precision to cover the end point (as characters

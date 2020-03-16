@@ -29,6 +29,8 @@ export class CharMeasure extends EventEmitter {
   public measure(options: ITerminalOptions): void {
     this._measureElement.style.fontFamily = options.fontFamily;
     this._measureElement.style.fontSize = `${options.fontSize}px`;
+    // set the standard char line-height equal to the font-size
+    this._measureElement.style.lineHeight = `${options.fontSize}px`;
     const geometry = this._measureElement.getBoundingClientRect();
     // The element is likely currently display:none, we should retain the
     // previous value.

@@ -71,26 +71,12 @@ export class TextRenderLayer extends BaseRenderLayer {
         for (let k = 0; k < line.length; k += 1) {
           const charData = line[k];
 
-          let char = charData[0];
+          const char = charData[0];
           const fg = charData[1];
           const bg = charData[2];
-          let width = charData[3];
+          const width = charData[3];
           if (width === 0) {
             continue;
-          }
-          k += 1;
-          while (k < line.length) {
-            const newChar = line[k];
-            if (newChar[1] === fg && newChar[2] === bg) {
-              if (newChar[3] > 0) {
-                char += newChar[0];
-              }
-              width += newChar[3];
-              k += 1;
-            } else {
-              k -= 1;
-              break;
-            }
           }
           callback(char, width, x, y, fg, bg);
           x += width;
