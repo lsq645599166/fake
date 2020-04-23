@@ -3,35 +3,16 @@ import { IBuffer, ICharMeasure, IPadding } from '../Types';
 export class MouseHelper {
 
   public static GET_COORDS_RELATIVE_TO_ELEMENT(
-    event: {pageX: number, pageY: number},
+    event: {clientX: number, clientY: number},
     element: HTMLElement,
     padding: IPadding,
   ): [number, number] {
-    // Ignore browsers that don't support MouseEvent.pageX
-    if (event.pageX == null) {
-      return null;
-    }
+    const rect = element.getBoundingClientRect();
 
-    let x = event.pageX;
-    let y = event.pageY;
-
-    // Converts the coordinates from being relative to the document to being
-    // relative to the terminal.
-    let _element = element;
-    while (_element) {
-      x -= _element.offsetLeft;
-      y -= _element.offsetTop;
-      _element = <HTMLElement>_element.offsetParent;
-    }
-
-    _element = element;
-    while (_element && _element !== _element.ownerDocument.body) {
-      x += _element.scrollLeft;
-      y += _element.scrollTop;
-      _element = <HTMLElement>_element.parentElement;
-    }
-
-    return [x - padding.left, y - padding.top];
+    return [
+      event.clientX - rect.left - padding.left,
+      event.clientY - rect.top - padding.top,
+    ];
   }
   constructor(private _renderer) {}
 
@@ -49,7 +30,7 @@ export class MouseHelper {
    * select that cell and the right half will select the next cell.
    */
   public getCoords(
-    event: {pageX: number, pageY: number},
+    event: {clientX: number, clientY: number},
     element: HTMLElement, buffer: IBuffer,
     charMeasure: ICharMeasure,
     lineHeight: number,
