@@ -66,7 +66,7 @@ export interface ITerminal {
 
 export interface IMouseHelper {
   getCoords(
-    event: { pageX: number, pageY: number },
+    event: { clientX: number, clientY: number },
     element: HTMLElement,
     buffer: IBuffer,
     charMeasure: ICharMeasure,
